@@ -1,0 +1,16 @@
+﻿using Avalonia;
+using System;
+
+namespace Avalonia_Test;
+
+internal sealed class Program
+{
+    [STAThread]
+    public static void Main(string[] args) => BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
+            .UsePlatformDetect()
+            .WithInterFont()   // вместо WithDeveloperTools
+            .LogToTrace();
+}

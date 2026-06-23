@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Avalonia_Test.MainWindow"
+        Title="Бильярд"
+        Width="900" Height="700">
+	<DockPanel>
+		<TextBlock x:Name="ScoreText" Text="Забито: 0" FontSize="24"
+				   DockPanel.Dock="Top" Margin="10" Foreground="White"/>
+		<Border BorderBrush="#4a2a0a" BorderThickness="8" Background="#1a6b3c">
+			<Canvas x:Name="GameCanvas" Background="#1a6b3c"
+					PointerPressed="OnPointerPressed"
+					PointerMoved="OnPointerMoved"
+					PointerReleased="OnPointerReleased"/>
+		</Border>
+	</DockPanel>
+</Window>
