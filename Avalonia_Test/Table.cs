@@ -1,5 +1,4 @@
 ﻿namespace Avalonia_Test;
-
 public class Table
 {
     public double Left { get; set; }
