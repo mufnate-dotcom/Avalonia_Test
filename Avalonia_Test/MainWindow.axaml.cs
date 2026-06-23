@@ -6,9 +6,7 @@ using Avalonia.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 namespace Avalonia_Test;
-
 public partial class MainWindow : Window
 {
     private Table _table = new();
@@ -18,13 +16,11 @@ public partial class MainWindow : Window
     private TextBlock _scoreText;
     private DispatcherTimer _timer;
     private Canvas _canvas;
-
     private Ball _selectedBall;
     private bool _isAiming;
     private double _mouseX, _mouseY;
     private int _score = 0;
     private List<Ellipse> _pocketVisuals = new();
-
     public MainWindow()
     {
         InitializeComponent();
@@ -33,7 +29,6 @@ public partial class MainWindow : Window
         _canvas.PointerPressed += OnPointerPressed;
         _canvas.PointerMoved += OnPointerMoved;
         _canvas.PointerReleased += OnPointerReleased;
-
         _aimLine = new Line { Stroke = Brushes.White, StrokeThickness = 2, IsVisible = false };
         _canvas.Children.Add(_aimLine);
 
@@ -42,7 +37,6 @@ public partial class MainWindow : Window
         _timer.Tick += OnTick;
         _timer.Start();
     }
-
     private void InitGame()
     {
         double margin = 60;
@@ -56,14 +50,9 @@ public partial class MainWindow : Window
         _canvas.Children.Clear();
         _canvas.Children.Add(_aimLine);
         DrawPockets();
-
         _balls.Clear();
         _ellipses.Clear();
-
-        // Белый шар
         _balls.Add(new Ball(200, 300, Brushes.White));
-
-        // Цветные шары
         var colors = new[]
         {
             Brushes.Yellow, Brushes.Blue, Brushes.Red, Brushes.Purple,
@@ -81,19 +70,16 @@ public partial class MainWindow : Window
             col++;
             if (col > row) { row++; col = 0; }
         }
-
         foreach (var b in _balls)
         {
             var el = new Ellipse { Width = b.Radius * 2, Height = b.Radius * 2, Fill = b.Color };
             _canvas.Children.Add(el);
             _ellipses.Add(el);
         }
-
         UpdateEllipses();
         _score = 0;
         _scoreText.Text = $"Забито: {_score}";
     }
-
     private void DrawPockets()
     {
         double pocketRadius = 22;
@@ -120,7 +106,6 @@ public partial class MainWindow : Window
             _pocketVisuals.Add(pocket);
         }
     }
-
     private void UpdateEllipses()
     {
         for (int i = 0; i < _balls.Count; i++)
@@ -129,7 +114,6 @@ public partial class MainWindow : Window
             Canvas.SetTop(_ellipses[i], _balls[i].Y - _balls[i].Radius);
         }
     }
-
     private void OnTick(object? sender, EventArgs e)
     {
         Physics.SeparateBalls(_balls);
@@ -140,7 +124,6 @@ public partial class MainWindow : Window
         CheckPockets();
         UpdateEllipses();
     }
-
     private void CheckPockets()
     {
         var pockets = new (double x, double y)[]
@@ -151,12 +134,10 @@ public partial class MainWindow : Window
             (_table.Left + _table.Width, _table.Top + _table.Height)
         };
         double pocketRadius = 22;
-
         for (int i = _balls.Count - 1; i >= 0; i--)
         {
             var b = _balls[i];
             if (b.Color == Brushes.White) continue;
-
             foreach (var p in pockets)
             {
                 double dx = b.X - p.x;
@@ -174,7 +155,6 @@ public partial class MainWindow : Window
             }
         }
     }
-
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         var pos = e.GetPosition(_canvas);
@@ -189,13 +169,11 @@ public partial class MainWindow : Window
             e.Pointer.Capture(_canvas);
         }
     }
-
     private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
         var pos = e.GetPosition(_canvas);
         _mouseX = pos.X;
         _mouseY = pos.Y;
-
         if (_isAiming && _selectedBall != null)
         {
             double dx = _mouseX - _selectedBall.X;
@@ -217,7 +195,6 @@ public partial class MainWindow : Window
                 _aimLine.IsVisible = false;
         }
     }
-
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         if (_isAiming && _selectedBall != null)
@@ -227,7 +204,6 @@ public partial class MainWindow : Window
             double dist = Math.Sqrt(dx * dx + dy * dy);
             if (dist > 1)
             {
-                // Очень мощный удар
                 double power = Math.Min(dist * 8.0, 800);
                 _selectedBall.Vx = -dx / dist * power;
                 _selectedBall.Vy = -dy / dist * power;
