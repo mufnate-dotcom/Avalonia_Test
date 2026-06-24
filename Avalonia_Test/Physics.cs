@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 namespace Avalonia_Test;
 public static class Physics
@@ -14,10 +14,6 @@ public static class Physics
             b.Y += b.Vy * dt;
             b.Vx *= table.Friction;
             b.Vy *= table.Friction;
-            if (b.X - b.Radius < table.Left) { b.X = table.Left + b.Radius; b.Vx = -b.Vx * table.CushionRestitution; }
-            if (b.X + b.Radius > table.Left + table.Width) { b.X = table.Left + table.Width - b.Radius; b.Vx = -b.Vx * table.CushionRestitution; }
-            if (b.Y - b.Radius < table.Top) { b.Y = table.Top + b.Radius; b.Vy = -b.Vy * table.CushionRestitution; }
-            if (b.Y + b.Radius > table.Top + table.Height) { b.Y = table.Top + table.Height - b.Radius; b.Vy = -b.Vy * table.CushionRestitution; }
             if (Math.Abs(b.Vx) < StopThreshold) b.Vx = 0;
             if (Math.Abs(b.Vy) < StopThreshold) b.Vy = 0;
         }
@@ -64,6 +60,7 @@ public static class Physics
         a.Y -= ny * overlap;
         b.X += nx * overlap;
         b.Y += ny * overlap;
+
         double dvx = a.Vx - b.Vx;
         double dvy = a.Vy - b.Vy;
         double dvn = dvx * nx + dvy * ny;
