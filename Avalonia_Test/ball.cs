@@ -1,4 +1,4 @@
-﻿using Avalonia.Media;
+using Avalonia.Media;
 namespace Avalonia_Test;
 public class Ball
 {
