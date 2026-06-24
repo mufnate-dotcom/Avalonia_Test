@@ -1,4 +1,4 @@
-﻿namespace Avalonia_Test;
+namespace Avalonia_Test;
 public class Table
 {
     public double Left { get; set; }
@@ -7,4 +7,5 @@ public class Table
     public double Height { get; set; }
     public double Friction { get; set; } = 0.999;
     public double CushionRestitution { get; set; } = 0.75;
+    public double PocketRadius { get; set; } = 30;
 }
