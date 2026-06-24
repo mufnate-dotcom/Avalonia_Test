@@ -6,7 +6,7 @@ public class Ball
     public double Y { get; set; }
     public double Vx { get; set; }
     public double Vy { get; set; }
-    public double Radius { get; set; } = 12;
+    public double Radius { get; set; } = 13;
     public IBrush Color { get; set; }
     public Ball(double x, double y, IBrush color)
     {
