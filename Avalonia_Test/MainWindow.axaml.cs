@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
@@ -21,6 +22,7 @@ public partial class MainWindow : Window
     private double _mouseX, _mouseY;
     private int _score = 0;
     private List<Ellipse> _pocketVisuals = new();
+    private bool _isGameOver = false;
     public MainWindow()
     {
         InitializeComponent();
@@ -31,22 +33,16 @@ public partial class MainWindow : Window
         _canvas.PointerReleased += OnPointerReleased;
         _aimLine = new Line { Stroke = Brushes.White, StrokeThickness = 2, IsVisible = false };
         _canvas.Children.Add(_aimLine);
-
         this.Loaded += (s, e) => { InitGame(); };
+        this.SizeChanged += (s, e) => { UpdateTableDimensions(); };
         _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
         _timer.Tick += OnTick;
         _timer.Start();
     }
     private void InitGame()
     {
-        double margin = 60;
-        _table.Left = margin;
-        _table.Top = margin;
-        _table.Width = _canvas.Bounds.Width - 2 * margin;
-        _table.Height = _canvas.Bounds.Height - 2 * margin;
-        _table.Friction = 0.999;
-        _table.CushionRestitution = 0.75;
-
+        _isGameOver = false;
+        UpdateTableDimensions();
         _canvas.Children.Clear();
         _canvas.Children.Add(_aimLine);
         DrawPockets();
@@ -76,18 +72,30 @@ public partial class MainWindow : Window
             _canvas.Children.Add(el);
             _ellipses.Add(el);
         }
+
         UpdateEllipses();
         _score = 0;
         _scoreText.Text = $"Забито: {_score}";
     }
+    private void UpdateTableDimensions()
+    {
+        _table.Left = 0;
+        _table.Top = 0;
+        _table.Width = _canvas.Bounds.Width;
+        _table.Height = _canvas.Bounds.Height;
+        if (_table.Width < 100) _table.Width = 780;
+        if (_table.Height < 100) _table.Height = 580;
+    }
     private void DrawPockets()
     {
-        double pocketRadius = 22;
+        double pocketRadius = _table.PocketRadius;
         var positions = new (double x, double y)[]
         {
             (_table.Left, _table.Top),
+            (_table.Left + _table.Width / 2, _table.Top),
             (_table.Left + _table.Width, _table.Top),
             (_table.Left, _table.Top + _table.Height),
+            (_table.Left + _table.Width / 2, _table.Top + _table.Height),
             (_table.Left + _table.Width, _table.Top + _table.Height)
         };
         foreach (var p in positions)
@@ -116,33 +124,78 @@ public partial class MainWindow : Window
     }
     private void OnTick(object? sender, EventArgs e)
     {
+        if (_isGameOver) return;
+
         Physics.SeparateBalls(_balls);
+
         if (!_isAiming)
         {
             Physics.UpdateBalls(_balls, _table, 0.02);
+            HandleBordersAndPockets();
         }
-        CheckPockets();
+
         UpdateEllipses();
     }
-    private void CheckPockets()
+    private void HandleBordersAndPockets()
     {
         var pockets = new (double x, double y)[]
         {
             (_table.Left, _table.Top),
+            (_table.Left + _table.Width / 2, _table.Top),
             (_table.Left + _table.Width, _table.Top),
             (_table.Left, _table.Top + _table.Height),
+            (_table.Left + _table.Width / 2, _table.Top + _table.Height),
             (_table.Left + _table.Width, _table.Top + _table.Height)
         };
-        double pocketRadius = 22;
+        double pocketRadius = _table.PocketRadius;
+
         for (int i = _balls.Count - 1; i >= 0; i--)
         {
             var b = _balls[i];
-            if (b.Color == Brushes.White) continue;
+            bool inPocket = false;
+
             foreach (var p in pockets)
             {
                 double dx = b.X - p.x;
                 double dy = b.Y - p.y;
                 if (dx * dx + dy * dy < pocketRadius * pocketRadius)
+                {
+                    inPocket = true;
+                    break;
+                }
+            }
+            if (inPocket)
+            {
+                if (b.Color == Brushes.White)
+                {
+                    b.X = 200;
+                    b.Y = 300;
+                    b.Vx = 0;
+                    b.Vy = 0;
+                    continue;
+                }
+                if (b.Color == Brushes.Black)
+                {
+                    if (_score < 14)
+                    {
+                        _isGameOver = true;
+                        ShowLoseMessage("Вы забили чёрный шар.\nИгра перезапускается.");
+                        return;
+                    }
+                    else
+                    {
+                        _score++;
+                        _scoreText.Text = $"Забито: {_score}";
+                        _balls.RemoveAt(i);
+                        var el = _ellipses[i];
+                        _canvas.Children.Remove(el);
+                        _ellipses.RemoveAt(i);
+                        _isGameOver = true;
+                        ShowVictoryMessage();
+                        return;
+                    }
+                }
+                else
                 {
                     _balls.RemoveAt(i);
                     var el = _ellipses[i];
@@ -150,13 +203,123 @@ public partial class MainWindow : Window
                     _ellipses.RemoveAt(i);
                     _score++;
                     _scoreText.Text = $"Забито: {_score}";
-                    break;
                 }
+                continue;
+            }
+            bool bounced = false;
+            if (b.X - b.Radius < _table.Left)
+            {
+                b.X = _table.Left + b.Radius;
+                b.Vx = -b.Vx * _table.CushionRestitution;
+                bounced = true;
+            }
+            else if (b.X + b.Radius > _table.Left + _table.Width)
+            {
+                b.X = _table.Left + _table.Width - b.Radius;
+                b.Vx = -b.Vx * _table.CushionRestitution;
+                bounced = true;
+            }
+
+            if (b.Y - b.Radius < _table.Top)
+            {
+                b.Y = _table.Top + b.Radius;
+                b.Vy = -b.Vy * _table.CushionRestitution;
+                bounced = true;
+            }
+            else if (b.Y + b.Radius > _table.Top + _table.Height)
+            {
+                b.Y = _table.Top + _table.Height - b.Radius;
+                b.Vy = -b.Vy * _table.CushionRestitution;
+                bounced = true;
+            }
+
+            if (bounced)
+            {
+                b.Vx *= 0.99;
+                b.Vy *= 0.99;
+                if (Math.Abs(b.Vx) < 0.01) b.Vx = 0;
+                if (Math.Abs(b.Vy) < 0.01) b.Vy = 0;
             }
         }
     }
+    private void ShowVictoryMessage()
+    {
+        var win = new Window
+        {
+            Title = "Победа!",
+            Width = 350,
+            Height = 180,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "Поздравляем!\nВы забили все шары!",
+                        FontSize = 20,
+                        TextWrapping = TextWrapping.Wrap,
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                        Margin = new Thickness(0, 0, 0, 20)
+                    },
+                    new Button
+                    {
+                        Content = "Начать заново",
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                        Padding = new Thickness(30, 10, 30, 10)
+                    }
+                }
+            }
+        };
+        var button = (Button)((StackPanel)win.Content).Children[1];
+        button.Click += (s, e) => { win.Close(); ResetGame(); };
+        win.ShowDialog(this);
+    }
+    private void ShowLoseMessage(string message)
+    {
+        var win = new Window
+        {
+            Title = "Поражение",
+            Width = 350,
+            Height = 180,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = message,
+                        FontSize = 16,
+                        TextWrapping = TextWrapping.Wrap,
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                        Margin = new Thickness(0, 0, 0, 20)
+                    },
+                    new Button
+                    {
+                        Content = "Начать заново",
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                        Padding = new Thickness(30, 10, 30, 10)
+                    }
+                }
+            }
+        };
+        var button = (Button)((StackPanel)win.Content).Children[1];
+        button.Click += (s, e) => { win.Close(); ResetGame(); };
+        win.ShowDialog(this);
+    }
+    private void ResetGame()
+    {
+        _isGameOver = false;
+        _score = 0;
+        _scoreText.Text = "Забито: 0";
+        InitGame();
+    }
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        if (_isGameOver) return;
         var pos = e.GetPosition(_canvas);
         var hit = _balls.FirstOrDefault(b =>
             (b.X - pos.X) * (b.X - pos.X) + (b.Y - pos.Y) * (b.Y - pos.Y) < b.Radius * b.Radius);
@@ -171,9 +334,11 @@ public partial class MainWindow : Window
     }
     private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
+        if (_isGameOver) return;
         var pos = e.GetPosition(_canvas);
         _mouseX = pos.X;
         _mouseY = pos.Y;
+
         if (_isAiming && _selectedBall != null)
         {
             double dx = _mouseX - _selectedBall.X;
@@ -197,6 +362,7 @@ public partial class MainWindow : Window
     }
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
+        if (_isGameOver) return;
         if (_isAiming && _selectedBall != null)
         {
             double dx = _mouseX - _selectedBall.X;
