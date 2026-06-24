@@ -5,7 +5,7 @@ public class Table
     public double Top { get; set; }
     public double Width { get; set; }
     public double Height { get; set; }
-    public double Friction { get; set; } = 0.999;
+    public double Friction { get; set; } = 0.995;
     public double CushionRestitution { get; set; } = 0.75;
     public double PocketRadius { get; set; } = 30;
 }
