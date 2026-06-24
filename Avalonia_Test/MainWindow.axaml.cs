@@ -125,9 +125,6 @@ public partial class MainWindow : Window
     private void OnTick(object? sender, EventArgs e)
     {
         if (_isGameOver) return;
-
-        Physics.SeparateBalls(_balls);
-
         if (!_isAiming)
         {
             Physics.UpdateBalls(_balls, _table, 0.02);
@@ -148,7 +145,6 @@ public partial class MainWindow : Window
             (_table.Left + _table.Width, _table.Top + _table.Height)
         };
         double pocketRadius = _table.PocketRadius;
-
         for (int i = _balls.Count - 1; i >= 0; i--)
         {
             var b = _balls[i];
@@ -179,7 +175,7 @@ public partial class MainWindow : Window
                     if (_score < 14)
                     {
                         _isGameOver = true;
-                        ShowLoseMessage("Вы забили чёрный шар.\nИгра перезапускается.");
+                        ShowLoseMessage("Вы забили чёрный шар раньше времени!\nИгра перезапускается.");
                         return;
                     }
                     else
@@ -206,6 +202,7 @@ public partial class MainWindow : Window
                 }
                 continue;
             }
+
             bool bounced = false;
             if (b.X - b.Radius < _table.Left)
             {
@@ -338,7 +335,6 @@ public partial class MainWindow : Window
         var pos = e.GetPosition(_canvas);
         _mouseX = pos.X;
         _mouseY = pos.Y;
-
         if (_isAiming && _selectedBall != null)
         {
             double dx = _mouseX - _selectedBall.X;
@@ -370,7 +366,7 @@ public partial class MainWindow : Window
             double dist = Math.Sqrt(dx * dx + dy * dy);
             if (dist > 1)
             {
-                double power = Math.Min(dist * 8.0, 800);
+                double power = Math.Min(dist * 30.0, 3000);
                 _selectedBall.Vx = -dx / dist * power;
                 _selectedBall.Vy = -dy / dist * power;
             }
